@@ -30,4 +30,9 @@ Once the plugin is loaded, use <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>G</kbd> to grab
 
 
 ## Known Issues
-1. The tool does not support gradient backgrounds. This can be worked around by removing graph shadows, capturing, then editing in a ne background.
+1. The tool does not support gradient backgrounds.  
+   **Workaround:**
+    1. Use a single-color background
+    1. Remove graph shadows (in IDA's options)
+    1. Capture the graph image
+    1. Replace the background in an image editor
