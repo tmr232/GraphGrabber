@@ -4,6 +4,11 @@ Used to grab full-resolution images of IDA graphs.
 
 Released under MIT license.
 
+## Dependencies
+
+1. [Sark](https://github.com/tmr232/Sark)
+1. [Pillow](https://python-pillow.org/)
+
 ## Prerequisites
 Disable graph animation in IDA's options (`Options -> General -> Graph -> General -> Enable Graph Animations`).
 
