@@ -1,21 +1,23 @@
-'''
-Make sure to disable animations in the options!
-'''
 import sark.qt
 from PIL import Image, ImageChops
 import idaapi
 from cStringIO import StringIO
 
+# Those are a bit of voodoo.
+# When a trimming an axis from both ends, the size on that axis is set to the
+# trimmed size to speed up the capture. The margins are added because
+# it sometimes fails without them.
 HEIGHT_MARGIN = 10
-
 WIDTH_MARGIN = 10
 
+# Those 3 are safety values to keep IDA from freezing indefinitely.
+# Feel free to change if needed (results are trimmed).
 MAX_ITERATIONS = 30
 MAX_WIDTH = 10000
 MAX_HEIGHT = 10000
 
+# Used to increment the size when needed. Higher values may speed up capture.
 HEIGHT_INCREMENT = 100
-
 WIDTH_INCREMENT = 100
 
 
@@ -50,12 +52,13 @@ def grab_graph():
     width = widget.width()
     height = widget.height()
 
-    # Both the maximum iteration count and the max width and height are
-    # used as safeties. You can change their values as needed.
     graph_image = None
-    for _ in xrange(MAX_ITERATIONS):
+
+    for iteration in xrange(MAX_ITERATIONS):
         if height >= MAX_HEIGHT or width >= MAX_WIDTH:
             break
+
+        print 'Iteration: {}'.format(iteration)
 
         sark.qt.resize_widget(widget, width, height)
 
@@ -70,24 +73,26 @@ def grab_graph():
             height += HEIGHT_INCREMENT
             continue
 
-        print width, height
-        print image.width, image.height
-        print trimmed.width, trimmed.height
-        print left, upper, right, lower
+        print 'Desired:', width, height
+        print 'Image:', image.width, image.height
+        print 'Trimmed:', trimmed.width, trimmed.height
+        print 'Bounds:', left, upper, right, lower
 
         resize = False
         if left == 0 or right == image.width:
-            print 'w'
+            print 'Increase width'
             width += WIDTH_INCREMENT
             resize = True
-        elif trimmed is not None:  # speedup
+
+        else:  # speedup
             width = trimmed.width + WIDTH_MARGIN
 
         if upper == 0 or lower == image.height:
-            print 'h'
+            print 'Increase height'
             height += HEIGHT_INCREMENT
             resize = True
-        elif trimmed is not None:  # speedup
+
+        else:  # speedup
             height = trimmed.height + HEIGHT_MARGIN
 
         graph_image = trimmed
@@ -145,9 +150,14 @@ def PLUGIN_ENTRY():
 
 
 def is_script_file():
+    ''' Check if executing as plugin or script.
+
+    Only works with Sark's plugin loader.
+    :return: bool
+    '''
+    # TODO: Make it work regardless of Sark's plugin loader.
     import traceback
     stack = traceback.extract_stack()
-    print stack
     (filename, line_number, function_name, text) = stack[0]
     return function_name == 'IDAPython_ExecScript'
 
