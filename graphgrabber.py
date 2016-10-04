@@ -2,9 +2,6 @@
 Make sure to disable animations in the options!
 '''
 
-
-from time import sleep
-
 import sark.qt
 from PIL import Image, ImageChops
 import idaapi
@@ -15,7 +12,6 @@ def trim(im, bg=None):
     if bg is None:
         bg = get_bg(im)
     diff = ImageChops.difference(im, bg)
-    # diff = ImageChops.add(diff, diff, 2.0, -100)
     bbox = diff.getbbox()
     if bbox:
         return im.crop(bbox), bbox
@@ -89,7 +85,7 @@ def grab_image(widget):
     return image
 
 
-def fit_graph(): # Does not work!
+def fit_graph():  # Does not work!
     widget = sark.qt.get_widget('IDA View-A').children()[0].children()[0]
 
     for x in range(5):
