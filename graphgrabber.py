@@ -1,7 +1,6 @@
 '''
 Make sure to disable animations in the options!
 '''
-
 import sark.qt
 from PIL import Image, ImageChops
 import idaapi
@@ -76,7 +75,7 @@ def grab_graph():
         if not resize:
             break
 
-    trimmed.show()
+    return trimmed
 
 
 def grab_image(widget):
@@ -85,30 +84,33 @@ def grab_image(widget):
     return image
 
 
-def fit_graph():  # Does not work!
-    widget = sark.qt.get_widget('IDA View-A').children()[0].children()[0]
-
-    for x in range(5):
-        print x
-        print widget.width(), widget.height()
-        graph_zoom_fit()
-        i_fit = sark.qt.capture_widget(widget)
-        graph_zoom_100()
-        i_100 = sark.qt.capture_widget(widget)
-
-        if i_fit == i_100:
-            break
-
-        sark.qt.resize_widget(widget, widget.width() + 100, widget.height() + 100)
-
-    image_data = sark.qt.capture_widget(widget)
-    image = Image.open(StringIO(image_data))
-
-    trimmed, x = trim(image)
-    trimmed.show()
-
-
 def show(w):
     image_data = sark.qt.capture_widget(w)
     image = Image.open(StringIO(image_data))
     image.show()
+
+
+class GraphGrabber(idaapi.plugin_t):
+    flags = idaapi.PLUGIN_PROC
+    comment = 'GraphGrabber'
+    help = 'Automatically grab full-res images of graphs'
+    wanted_name = 'GraphGrabber'
+    wanted_hotkey = 'Ctrl+Alt+G'
+
+    def init(self):
+        pass
+
+    def run(self, arg):
+        path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
+        if not path:
+            return
+
+        image = grab_graph()
+        try:
+            image.save(path, format='PNG')
+        except:
+            import traceback
+            traceback.print_exc()
+
+    def term(self):
+        pass
