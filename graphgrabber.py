@@ -6,6 +6,18 @@ from PIL import Image, ImageChops
 import idaapi
 from cStringIO import StringIO
 
+HEIGHT_MARGIN = 10
+
+WIDTH_MARGIN = 10
+
+MAX_ITERATIONS = 30
+MAX_WIDTH = 10000
+MAX_HEIGHT = 10000
+
+HEIGHT_INCREMENT = 100
+
+WIDTH_INCREMENT = 100
+
 
 def trim(im, bg=None):
     if bg is None:
@@ -38,9 +50,13 @@ def grab_graph():
     width = widget.width()
     height = widget.height()
 
-    for x in range(30):
-        # The extra pixels are to make sure we use the background for trimming
-        # and not the node borders.
+    # Both the maximum iteration count and the max width and height are
+    # used as safeties. You can change their values as needed.
+    graph_image = None
+    for _ in xrange(MAX_ITERATIONS):
+        if height >= MAX_HEIGHT or width >= MAX_WIDTH:
+            break
+
         sark.qt.resize_widget(widget, width, height)
 
         center_graph()
@@ -49,33 +65,37 @@ def grab_graph():
 
         try:
             trimmed, (left, upper, right, lower) = trim(image)
-        except:
-            trimmed, (left, upper, right, lower) = None, (None, None, None, None)
+        except TypeError:
+            width += WIDTH_INCREMENT
+            height += HEIGHT_INCREMENT
+            continue
 
         print width, height
         print image.width, image.height
         print trimmed.width, trimmed.height
+        print left, upper, right, lower
+
         resize = False
-        # if width == trimmed.width:
         if left == 0 or right == image.width:
             print 'w'
-            width += 100
+            width += WIDTH_INCREMENT
             resize = True
         elif trimmed is not None:  # speedup
-            width = trimmed.width + 10
+            width = trimmed.width + WIDTH_MARGIN
 
-        # if height == trimmed.height:
         if upper == 0 or lower == image.height:
             print 'h'
-            height += 100
+            height += HEIGHT_INCREMENT
             resize = True
         elif trimmed is not None:  # speedup
-            width = trimmed.height + 10
+            height = trimmed.height + HEIGHT_MARGIN
+
+        graph_image = trimmed
 
         if not resize:
             break
 
-    return trimmed
+    return graph_image
 
 
 def grab_image(widget):
@@ -90,6 +110,19 @@ def show(w):
     image.show()
 
 
+def capture_graph():
+    path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
+    if not path:
+        return
+
+    image = grab_graph()
+    try:
+        image.save(path, format='PNG')
+    except:
+        import traceback
+        traceback.print_exc()
+
+
 class GraphGrabber(idaapi.plugin_t):
     flags = idaapi.PLUGIN_PROC
     comment = 'GraphGrabber'
@@ -98,19 +131,27 @@ class GraphGrabber(idaapi.plugin_t):
     wanted_hotkey = 'Ctrl+Alt+G'
 
     def init(self):
-        pass
+        return idaapi.PLUGIN_KEEP
 
     def run(self, arg):
-        path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
-        if not path:
-            return
-
-        image = grab_graph()
-        try:
-            image.save(path, format='PNG')
-        except:
-            import traceback
-            traceback.print_exc()
+        capture_graph()
 
     def term(self):
         pass
+
+
+def PLUGIN_ENTRY():
+    return GraphGrabber()
+
+
+def is_script_file():
+    import traceback
+    stack = traceback.extract_stack()
+    print stack
+    (filename, line_number, function_name, text) = stack[0]
+    return function_name == 'IDAPython_ExecScript'
+
+
+if __name__ == '__main__':
+    if is_script_file():
+        capture_graph()
