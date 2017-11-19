@@ -61,7 +61,7 @@ def get_ida_view_widget(ida_view_widget_name='IDA View-A'):
 
 def grab_graph():
     widget = get_ida_view_widget()
-    
+
     width = widget.width()
     height = widget.height()
 
