@@ -120,8 +120,9 @@ def show(w):
     image.show()
 
 
-def capture_graph():
-    path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
+def capture_graph(path=None):
+    if not path:
+        path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
     if not path:
         return
 
