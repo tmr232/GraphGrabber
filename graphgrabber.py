@@ -13,12 +13,12 @@ WIDTH_MARGIN = 10
 # Those 3 are safety values to keep IDA from freezing indefinitely.
 # Feel free to change if needed (results are trimmed).
 MAX_ITERATIONS = 30
-MAX_WIDTH = 10000
-MAX_HEIGHT = 10000
+MAX_WIDTH = 100000
+MAX_HEIGHT = 100000
 
 # Used to increment the size when needed. Higher values may speed up capture.
-HEIGHT_INCREMENT = 100
-WIDTH_INCREMENT = 100
+HEIGHT_INCREMENT = 1000
+WIDTH_INCREMENT = 1000
 
 
 def trim(im, bg=None):
