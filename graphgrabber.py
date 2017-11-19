@@ -47,13 +47,23 @@ def graph_zoom_fit():
     idaapi.process_ui_action('GraphZoomFit')
 
 
-def grab_graph():
-    widget = sark.qt.get_widget('IDA View-A').children()[0]
+def get_ida_view_widget(ida_view_widget_name='IDA View-A'):
+    
+    # IDA 7
+    widget = sark.qt.get_widget(ida_view_widget_name).children()[0]
     try:
+        # Older version of IDA
         widget = widget.children()[0]
     except IndexError:
         pass
 
+    return widget
+
+
+def grab_graph():
+    
+    widget = get_ida_view_widget()
+    
     width = widget.width()
     height = widget.height()
 
