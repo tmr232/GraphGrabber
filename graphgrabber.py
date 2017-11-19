@@ -48,7 +48,12 @@ def graph_zoom_fit():
 
 
 def grab_graph():
-    widget = sark.qt.get_widget('IDA View-A').children()[0].children()[0]
+    widget = sark.qt.get_widget('IDA View-A').children()[0]
+    try:
+        widget = widget.children()[0]
+    except IndexError:
+        pass
+
     width = widget.width()
     height = widget.height()
 
