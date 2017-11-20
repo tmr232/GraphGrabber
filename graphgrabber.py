@@ -13,12 +13,12 @@ WIDTH_MARGIN = 10
 # Those 3 are safety values to keep IDA from freezing indefinitely.
 # Feel free to change if needed (results are trimmed).
 MAX_ITERATIONS = 30
-MAX_WIDTH = 10000
-MAX_HEIGHT = 10000
+MAX_WIDTH = 100000
+MAX_HEIGHT = 100000
 
 # Used to increment the size when needed. Higher values may speed up capture.
-HEIGHT_INCREMENT = 100
-WIDTH_INCREMENT = 100
+HEIGHT_INCREMENT = 1000
+WIDTH_INCREMENT = 1000
 
 
 def trim(im, bg=None):
@@ -47,12 +47,19 @@ def graph_zoom_fit():
     idaapi.process_ui_action('GraphZoomFit')
 
 
-def grab_graph():
-    widget = sark.qt.get_widget('IDA View-A').children()[0]
+def get_ida_graph_widget(idaview_name='IDA View-A'):
+    widget = sark.qt.get_widget(idaview_name).children()[0]
     try:
+        # IDA < 7.0
         widget = widget.children()[0]
     except IndexError:
         pass
+
+    return widget
+
+
+def grab_graph():
+    widget = get_ida_graph_widget()
 
     width = widget.width()
     height = widget.height()
