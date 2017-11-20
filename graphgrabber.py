@@ -49,7 +49,7 @@ def graph_zoom_fit():
 
 def get_ida_graph_widget(idaview_name='IDA View-A'):
 
-    widget = sark.qt.get_widget(ida_view_widget_name).children()[0]
+    widget = sark.qt.get_widget(idaview_name).children()[0]
     try:
         # IDA < 7.0
         widget = widget.children()[0]
