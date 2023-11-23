@@ -1,7 +1,7 @@
 import sark.qt
 from PIL import Image, ImageChops
 import idaapi
-from cStringIO import StringIO
+from io import BytesIO
 
 # Those are a bit of voodoo.
 # When a trimming an axis from both ends, the size on that axis is set to the
@@ -25,7 +25,7 @@ def trim(im, bg=None):
     if bg is None:
         bg = get_bg(im)
     diff = ImageChops.difference(im, bg)
-    bbox = diff.getbbox()
+    bbox = diff.getbbox(alpha_only=False)
     if bbox:
         return im.crop(bbox), bbox
 
@@ -34,20 +34,23 @@ def get_bg(im):
     return Image.new(im.mode, im.size, im.getpixel((0, 0)))
 
 
-def center_graph():
+def center_graph(widget):
+    widget.setFocus()
     graph_zoom_fit()
     graph_zoom_100()
 
 
 def graph_zoom_100():
-    idaapi.process_ui_action('GraphZoom100')
+    if not idaapi.process_ui_action("GraphZoom100"):
+        raise RuntimeError("Failed to zoom 100%")
 
 
 def graph_zoom_fit():
-    idaapi.process_ui_action('GraphZoomFit')
+    if not idaapi.process_ui_action("GraphZoomFit"):
+        raise RuntimeError("Failed to zoom to fit")
 
 
-def get_ida_graph_widget(idaview_name='IDA View-A'):
+def get_ida_graph_widget(idaview_name="IDA View-A"):
     widget = sark.qt.get_widget(idaview_name).children()[0]
     try:
         # IDA < 7.0
@@ -66,33 +69,33 @@ def grab_graph():
 
     graph_image = None
 
-    for iteration in xrange(MAX_ITERATIONS):
+    for iteration in range(MAX_ITERATIONS):
         if height >= MAX_HEIGHT or width >= MAX_WIDTH:
             break
 
-        print 'Iteration: {}'.format(iteration)
+        print(f"Iteration: {iteration}")
 
         sark.qt.resize_widget(widget, width, height)
-
-        center_graph()
+        center_graph(widget)
 
         image = grab_image(widget)
 
         try:
             trimmed, (left, upper, right, lower) = trim(image)
-        except TypeError:
+        except TypeError as e:
+            print(e)
             width += WIDTH_INCREMENT
             height += HEIGHT_INCREMENT
             continue
 
-        print 'Desired:', width, height
-        print 'Image:', image.width, image.height
-        print 'Trimmed:', trimmed.width, trimmed.height
-        print 'Bounds:', left, upper, right, lower
+        print("Desired:", width, height)
+        print("Image:", image.width, image.height)
+        print("Trimmed:", trimmed.width, trimmed.height)
+        print("Bounds:", left, upper, right, lower)
 
         resize = False
         if left == 0 or right == image.width:
-            print 'Increase width'
+            print("Increase width")
             width += WIDTH_INCREMENT
             resize = True
 
@@ -100,7 +103,7 @@ def grab_graph():
             width = trimmed.width + WIDTH_MARGIN
 
         if upper == 0 or lower == image.height:
-            print 'Increase height'
+            print("Increase height")
             height += HEIGHT_INCREMENT
             resize = True
 
@@ -117,36 +120,37 @@ def grab_graph():
 
 def grab_image(widget):
     image_data = sark.qt.capture_widget(widget)
-    image = Image.open(StringIO(image_data))
+    image = Image.open(BytesIO(image_data))
     return image
 
 
 def show(w):
     image_data = sark.qt.capture_widget(w)
-    image = Image.open(StringIO(image_data))
+    image = Image.open(BytesIO(image_data))
     image.show()
 
 
 def capture_graph(path=None):
     if not path:
-        path = idaapi.askfile_c(1, 'graph.png', 'Save Graph...')
+        path = idaapi.ask_file(1, "graph.png", "Save Graph...")
     if not path:
         return
 
     image = grab_graph()
     try:
-        image.save(path, format='PNG')
+        image.save(path, format="PNG")
     except:
         import traceback
+
         traceback.print_exc()
 
 
 class GraphGrabber(idaapi.plugin_t):
     flags = idaapi.PLUGIN_PROC
-    comment = 'GraphGrabber'
-    help = 'Automatically grab full-res images of graphs'
-    wanted_name = 'GraphGrabber'
-    wanted_hotkey = 'Ctrl+Alt+G'
+    comment = "GraphGrabber"
+    help = "Automatically grab full-res images of graphs"
+    wanted_name = "GraphGrabber"
+    wanted_hotkey = "Ctrl+Alt+G"
 
     def init(self):
         return idaapi.PLUGIN_KEEP
@@ -163,18 +167,19 @@ def PLUGIN_ENTRY():
 
 
 def is_script_file():
-    ''' Check if executing as plugin or script.
+    """Check if executing as plugin or script.
 
     Only works with Sark's plugin loader.
     :return: bool
-    '''
+    """
     # TODO: Make it work regardless of Sark's plugin loader.
     import traceback
+
     stack = traceback.extract_stack()
-    (filename, line_number, function_name, text) = stack[0]
-    return function_name == 'IDAPython_ExecScript'
+    _filename, _line_number, function_name, _text = stack[0]
+    return function_name == "IDAPython_ExecScript"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if is_script_file():
         capture_graph()
